@@ -204,28 +204,26 @@ def register_logging(app):
     app.logger.addHandler(file_handler)
 
 
-# Adapted from from https://stackoverflow.com/a/73710929
-def valtobool (val, logger = None):
+# Adapted from https://stackoverflow.com/a/73710929
+def valtobool(val, logger=None):
     """Convert a string representation of truth to true (1) or false (0).
 
     True values are case insensitive 'y', 'yes', 't', 'true', 'on', and '1'.
     false values are case insensitive 'n', 'no', 'f', 'false', 'off', and '0'.
     Raises ValueError if 'val' is anything else.
     """
-    if type(val) == bool:
+    if isinstance(val, bool):
         return val
-    elif type(val) == int:
+    if isinstance(val, int):
         val = str(val)
-    val = val.lower()
+    val = str(val).lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return True
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+    if val in ('n', 'no', 'f', 'false', 'off', '0'):
         return False
-    else:
-        response = "invalid truth value %r" % (val,)
-        if logger:
-            logger.info(response)
-        raise ValueError(response)
+    if logger:
+        logger.warning("invalid truth value %r", val)
+    raise ValueError(f"invalid truth value {val!r}")
 
 
 def register_settings(app):
@@ -320,6 +318,12 @@ def register_settings(app):
         'USER_EMAIL_SENDER_EMAIL',
         app.config['USER_EMAIL_SENDER_EMAIL']
     )
+
+    if app.config['MAIL_USE_SSL'] and app.config['MAIL_USE_TLS']:
+        app.logger.warning(
+            "MAIL_USE_SSL and MAIL_USE_TLS are both enabled. "
+            "Use TLS on port 587 or SSL on port 465, not both."
+        )
 
     if "ENABLE_CHAR_XML_UPLOAD" not in app.config:
         app.config['ENABLE_CHAR_XML_UPLOAD'] = False

@@ -14,8 +14,7 @@
       * Reset Password via Email
       * Edit Email ( by Admin only )
       * User Registration
-      * Invitations ( TODO: Implement this )
-      * Invitation Only Registration ( TODO: Implement this )
+      * Email invitations (invite users by email; optional invitation-only registration)
   * Play Key Management:
     * Create, Edit, and Add notes to play keys
     * View accounts Tied to a play key
@@ -106,6 +105,59 @@ Please Reference `app/settings_example.py` to see all the variables
   * Everything else is optional and has defaults
   * Character XML import:
     * `ENABLE_CHAR_XML_UPLOAD` (default: `False`) — set to `True` to show the Upload XML button for GM 8+ users when migrating player data between servers
+  * Email / invitations (see below):
+    * `USER_ENABLE_EMAIL`, `USER_ENABLE_INVITE_USER`, `USER_REQUIRE_INVITATION`
+    * `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USE_SSL`, `MAIL_USERNAME`, `MAIL_PASSWORD`
+    * `USER_EMAIL_SENDER_NAME`, `USER_EMAIL_SENDER_EMAIL`
+
+## Screenshots
+
+<p align="center">
+  <img src="app/static/logo/logo.png" alt="NeoDashboard logo" width="200"/>
+</p>
+
+The dashboard includes account management, character tools, property moderation with an in-browser 3D model viewer, economy reports, and GM mail tools. Run a local instance to explore the full UI.
+
+## Email and Invitations
+
+Email invitations use [Flask-User](https://github.com/Flask-Middleware/flask-user) with the `account_invites` table already included in this project.
+
+### Enable invitations
+
+In `app/settings.py` (or via environment variables):
+
+```python
+USER_ENABLE_EMAIL = True
+USER_ENABLE_INVITE_USER = True
+USER_ENABLE_REGISTER = True  # or False if using invitation-only mode
+
+MAIL_SERVER = 'smtp.example.com'
+MAIL_PORT = 587
+MAIL_USE_TLS = True
+MAIL_USE_SSL = False
+MAIL_USERNAME = 'your-smtp-user'
+MAIL_PASSWORD = 'your-smtp-password'
+USER_EMAIL_SENDER_NAME = 'NeoDashboard'
+USER_EMAIL_SENDER_EMAIL = 'noreply@example.com'
+```
+
+### Invitation-only registration
+
+```python
+USER_REQUIRE_INVITATION = True
+USER_ENABLE_REGISTER = False
+```
+
+Authenticated users with invitations enabled see an **Invite** link in the navigation bar. Sent invitations are listed on the account view page (GM 3+).
+
+### SMTP / SSL notes
+
+| Port | `MAIL_USE_TLS` | `MAIL_USE_SSL` |
+|------|----------------|----------------|
+| 587  | `True`         | `False`        |
+| 465  | `False`        | `True`         |
+
+Do not enable both `MAIL_USE_TLS` and `MAIL_USE_SSL` at the same time — this commonly causes Flask mail SSL errors ([#93](https://github.com/DarkflameUniverse/NexusDashboard/issues/93)).
 
 ## Manual Linux Installation
 
