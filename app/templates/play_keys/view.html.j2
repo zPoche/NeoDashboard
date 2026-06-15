@@ -9,6 +9,7 @@
 {% endblock content_before %}
 
 {% block content %}
+  {% from 'macros/status.html.j2' import flag_status %}
   <div class="card shadow-sm mx-auto pb-3 bg-dark border-primary" style="width: 30em;">
     <div class="card-body">
       <div class="row">
@@ -49,11 +50,7 @@
           Active:
         </div>
         <div class="col">
-          {% if key.active %}
-            <h5 class="far fa-check-square text-success"></h5>
-          {% else %}
-            <h5 class="far fa-times-circle text-danger"></h5>
-          {% endif %}
+          {{ flag_status(active=key.active) }}
         </div>
       </div>
       <div class="row">

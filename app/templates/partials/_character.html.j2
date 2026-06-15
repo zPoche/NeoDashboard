@@ -1,4 +1,5 @@
 <div class="card shadow-sm bg-dark border-primary">
+  {% from 'macros/status.html.j2' import moderation_status %}
   <div class="card-body">
     <div class="row">
       <div class="col text-center">
@@ -25,13 +26,10 @@
       </div>
       <br/>
       <div class="col">
-        {% if character.needs_rename %}
-          <h5 class="far fa-times-circle text-danger"></h5>
-        {% elif character.pending_name %}
-          <h5 class="far fa-check-square text-success"></h5>
-        {% else %}
-          <h5 class="far fa-times-circle text-muted"></h5>
-        {% endif %}
+        {{ moderation_status(
+          approved=character.pending_name and not character.needs_rename,
+          rejected=character.needs_rename
+        ) }}
       </div>
     </div>
     <div class="row">

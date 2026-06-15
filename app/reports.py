@@ -11,6 +11,14 @@ import xml.etree.ElementTree as ET
 reports_blueprint = Blueprint('reports', __name__)
 
 
+def graph_color_from_label(label):
+    """Derive a stable chart color hex from a label string."""
+    color_hex = label.encode("utf-8").hex()
+    if len(color_hex) >= 7:
+        return "#" + color_hex[1:7]
+    return "#" + (color_hex * 3)[:6]
+
+
 @reports_blueprint.route('/', methods=['GET', 'POST'])
 @login_required
 @gm_level(3)
@@ -82,12 +90,7 @@ def items_graph(start, end):
                         data.append(entry.data[key])
                 else:
                     data.append(0)
-            # generate a color based on the value
-            color_hex = value.encode("utf-8").hex()
-            if len(color_hex) >= 7:
-                color = "#" + color_hex[1:7]
-            else:
-                color = "#" + (color_hex * 3)[:6]
+            color = graph_color_from_label(value)
 
             if data and max(data) > 10:
                 datasets.append({
@@ -144,12 +147,7 @@ def currency_graph(start, end):
                 data.append(entry.data[character.name])
             else:
                 data.append(0)
-        # generate a color based on the character name
-        color_hex = character.name.encode("utf-8").hex()
-        if len(color_hex) >= 7:
-            color = "#" + color_hex[1:7]
-        else:
-            color = "#" + (color_hex * 3)[:6]
+        color = graph_color_from_label(character.name)
 
         if data and max(data) > 10000:
             datasets.append({
@@ -205,12 +203,7 @@ def uscore_graph(start, end):
                 data.append(entry.data[character.name])
             else:
                 data.append(0)
-        # generate a color based on the character name
-        color_hex = character.name.encode("utf-8").hex()
-        if len(color_hex) >= 7:
-            color = "#" + color_hex[1:7]
-        else:
-            color = "#" + (color_hex * 3)[:6]
+        color = graph_color_from_label(character.name)
 
         if data and max(data) > 1000:
             datasets.append({
