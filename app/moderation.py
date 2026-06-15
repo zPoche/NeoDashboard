@@ -4,6 +4,7 @@ from app.models import PetNames, db, CharacterXML, CharacterInfo
 from datatables import ColumnDT, DataTables
 from app import gm_level, log_audit, scheduler
 from app.characters import apply_character_name_approval
+from app.strikes import account_id_for_character, issue_strike, deactivate_expired_strikes
 
 moderation_blueprint = Blueprint('moderation', __name__)
 
@@ -47,6 +48,18 @@ def reject_pet(id):
     log_audit(f"Rejected pet name {pet_data.pet_name} from {pet_data.owner_id}")
     flash(f"Rejected pet name {pet_data.pet_name} from {pet_data.owner_id}", "danger")
     pet_data.save()
+
+    if request.args.get('strike') == '1' and pet_data.owner_id:
+        strike = issue_strike(
+            account_id=account_id_for_character(pet_data.owner_id),
+            issued_by_id=current_user.id,
+            source_type='pet_name',
+            source_id=pet_data.id,
+            reason=f"Pet name rejected: {pet_data.pet_name}",
+        )
+        if strike and strike.action_taken:
+            flash(f"Strike issued. Auto-action: {strike.action_taken}", "warning")
+
     return redirect(request.referrer if request.referrer else url_for("main.index"))
 
 
@@ -90,6 +103,12 @@ def get_pets(status="all"):
                     <a role="button" class="btn btn-danger btn btn-block"
                         href='{url_for('moderation.reject_pet', id=id)}'>
                         Reject
+                    </a>
+                </div>
+                <div class="col">
+                    <a role="button" class="btn btn-warning btn btn-block"
+                        href='{url_for('moderation.reject_pet', id=id, strike=1)}'>
+                        Reject + Strike
                     </a>
                 </div>
             </div>
@@ -384,3 +403,11 @@ def auto_approval_task():
             current_app.logger.info(
                 f"Auto-approved: {char_count} characters, {pet_count} pets, {prop_count} properties"
             )
+
+
+@scheduler.task("cron", id="strike_rolloff", hour="*", timezone="UTC")
+def strike_rolloff_task():
+    with scheduler.app.app_context():
+        count = deactivate_expired_strikes()
+        if count:
+            current_app.logger.info(f"Deactivated {count} expired strikes")

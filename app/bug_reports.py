@@ -5,6 +5,7 @@ from datatables import ColumnDT, DataTables
 from app.forms import ResolveBugReportForm
 from app import gm_level
 from app.luclient import translate_from_locale
+from app.strikes import account_id_for_character, issue_strike
 
 bug_report_blueprint = Blueprint('bug_reports', __name__)
 
@@ -48,6 +49,20 @@ def resolve(id):
         report.resoleved_by_id = current_user.id
         report.resolved_time = db.func.now()
         report.save()
+
+        if form.issue_strike.data and report.reporter_id:
+            character = CharacterInfo.query.filter(CharacterInfo.id == report.reporter_id).first()
+            if character and character.account_id:
+                strike = issue_strike(
+                    account_id=character.account_id,
+                    issued_by_id=current_user.id,
+                    source_type='bug_report',
+                    source_id=report.id,
+                    reason=f"Bug report resolved with strike: {form.resolution.data}",
+                )
+                if strike and strike.action_taken:
+                    flash(f"Strike issued. Auto-action: {strike.action_taken}", "warning")
+
         return redirect(url_for("bug_reports.index", status="unresolved"))
 
     return render_template('bug_reports/resolve.html.j2', form=form, report=report)

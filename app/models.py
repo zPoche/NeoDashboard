@@ -1172,11 +1172,68 @@ class DashboardSettings(db.Model):
         db.session.add(setting)
         db.session.commit()
 
+
+class AccountStrike(db.Model):
+    __tablename__ = 'account_strikes'
+    id = db.Column(db.Integer, primary_key=True)
+
+    account_id = db.Column(
+        db.Integer,
+        db.ForeignKey(Account.id, ondelete='CASCADE'),
+        nullable=False,
+    )
+    account = db.relationship(
+        'Account',
+        foreign_keys=[account_id],
+        backref='strikes',
+        passive_deletes=True,
+    )
+
+    issued_by_id = db.Column(
+        db.Integer,
+        db.ForeignKey(Account.id),
+        nullable=False,
+    )
+    issued_by = db.relationship(
+        'Account',
+        foreign_keys=[issued_by_id],
+    )
+
+    source_type = db.Column(db.VARCHAR(32), nullable=False)
+    source_id = db.Column(db.Integer, nullable=True)
+    reason = db.Column(mysql.TEXT, nullable=False)
+
+    created_at = db.Column(
+        mysql.TIMESTAMP,
+        nullable=False,
+        server_default=db.func.now(),
+    )
+    expires_at = db.Column(mysql.TIMESTAMP, nullable=True)
+    active = db.Column(mysql.BOOLEAN, nullable=False, server_default='1')
+    action_taken = db.Column(db.VARCHAR(16), nullable=True)
+
     def save(self):
         db.session.add(self)
         db.session.commit()
         db.session.refresh(self)
 
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+
+class AnnouncementLog(db.Model):
+    __tablename__ = 'announcement_logs'
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(mysql.TEXT, nullable=False)
+    message = db.Column(mysql.TEXT, nullable=False)
+    sent_by_id = db.Column(
+        db.Integer,
+        db.ForeignKey(Account.id, ondelete='SET NULL'),
+        nullable=True,
+    )
+    sent_by = db.relationship('Account', foreign_keys=[sent_by_id])
+    sent_at = db.Column(
+        mysql.TIMESTAMP,
+        nullable=False,
+        server_default=db.func.now(),
+    )
+    success = db.Column(mysql.BOOLEAN, nullable=False, server_default='1')
+    error_message = db.Column(mysql.TEXT, nullable=True)

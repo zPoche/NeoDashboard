@@ -123,7 +123,7 @@ def create_app():
 
     # Extract the brickdb if it's not already extracted
     materials = pathlib.Path(f'{app.config["CACHE_LOCATION"]}Materials.xml')
-    if not materials.is_file():
+    if not app.config.get('TESTING') and not materials.is_file():
         # unzip the brickdb, and remove the import after
         from zipfile import ZipFile
         with ZipFile(f"{app.config['CLIENT_LOCATION']}res/brickdb.zip","r") as zip_ref:
@@ -146,7 +146,8 @@ def register_extensions(app):
     db.init_app(app)
     migrate.init_app(app, db)
     scheduler.init_app(app)
-    scheduler.start()
+    if not app.config.get('TESTING'):
+        scheduler.start()
 
     csrf_protect.init_app(app)
 
@@ -193,6 +194,8 @@ def register_blueprints(app):
     app.register_blueprint(api_blueprint, url_prefix='/api')
     from .leaderboards import leaderboards_blueprint
     app.register_blueprint(leaderboards_blueprint, url_prefix='/leaderboards')
+    from .announcements import announcements_blueprint
+    app.register_blueprint(announcements_blueprint, url_prefix='/announcements')
 
 
 def register_logging(app):
@@ -241,16 +244,19 @@ def register_settings(app):
         app.config.from_object('app.settings_example')
 
     # Load environment specific settings
-    app.config['TESTING'] = False
+    app.config['TESTING'] = os.getenv('TESTING', 'False').lower() in ('true', '1', 'yes')
     app.config['DEBUG'] = False
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        "pool_pre_ping": True,
-        "pool_size": 10,
-        "max_overflow": 2,
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-        "pool_use_lifo": True
-    }
+    if not app.config['TESTING']:
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            "pool_pre_ping": True,
+            "pool_size": 10,
+            "max_overflow": 2,
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+            "pool_use_lifo": True
+        }
+    else:
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
 
     app.config['SECRET_KEY'] = os.getenv(
         'APP_SECRET_KEY',
@@ -388,6 +394,37 @@ def register_settings(app):
             'RECAPTCHA_DATA_ATTRS',
             app.config['RECAPTCHA_DATA_ATTRS']
         )
+
+    def env_bool(name, default):
+        val = os.getenv(name, default)
+        if isinstance(val, bool):
+            return val
+        return str(val).lower() in ('true', '1', 'yes', 'on')
+
+    for key, default in {
+        'STRIKE_AUTO_ACTIONS_ENABLED': True,
+        'CHAT_API_ENABLED': False,
+    }.items():
+        if key not in app.config:
+            app.config[key] = default
+        app.config[key] = env_bool(key, app.config[key])
+
+    for key, default in {
+        'STRIKES_BEFORE_MUTE': 3,
+        'STRIKES_BEFORE_BAN': 5,
+        'STRIKE_MUTE_DAYS': 7,
+        'STRIKE_ROLLOFF_DAYS': 90,
+    }.items():
+        if key not in app.config:
+            app.config[key] = default
+        app.config[key] = int(os.getenv(key, app.config[key]))
+
+    if 'CHAT_API_URL' not in app.config:
+        app.config['CHAT_API_URL'] = 'http://localhost:2005/api/v1'
+    app.config['CHAT_API_URL'] = os.getenv(
+        'CHAT_API_URL',
+        app.config['CHAT_API_URL'],
+    )
 
 
 
