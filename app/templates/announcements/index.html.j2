@@ -1,0 +1,57 @@
+{% extends 'base.html.j2' %}
+
+{% block title %}Announcements{% endblock title %}
+{% block content_before %}In-Game Announcements{% endblock content_before %}
+
+{% block content %}
+  {% if not chat_api_enabled %}
+    <div class="alert alert-warning">
+      Chat API is disabled. Set <code>CHAT_API_ENABLED=True</code> and
+      <code>CHAT_API_URL</code> (default: <code>http://localhost:2005/api/v1</code>)
+      in settings or environment variables. The Chat Web API must be enabled in
+      the DLU server's <code>chatconfig.ini</code>.
+    </div>
+  {% else %}
+    <p class="text-muted">Announcements are sent to <code>{{ chat_api_url }}/announce</code></p>
+  {% endif %}
+
+  <form method="post">
+    {{ form.csrf_token }}
+    <div class="card shadow-sm mx-auto pb-3 bg-dark border-primary" style="width: 40rem;">
+      <div class="card-body">
+        {{ helper.render_field(form.title) }}
+        {{ helper.render_field(form.message) }}
+        {{ helper.render_submit_field(form.submit) }}
+      </div>
+    </div>
+  </form>
+
+  {% if history %}
+    <br/>
+    <h4>Recent Announcements</h4>
+    <table class="table table-dark table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Title</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in history %}
+          <tr>
+            <td>{{ entry.sent_at }}</td>
+            <td>{{ entry.title }}</td>
+            <td>
+              {% if entry.success %}
+                <span class="text-success">Sent</span>
+              {% else %}
+                <span class="text-danger" title="{{ entry.error_message }}">Failed</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endblock content %}

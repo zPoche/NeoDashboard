@@ -4,6 +4,7 @@ from app.models import Mail, CharacterInfo
 from app.forms import SendMailForm
 from app import gm_level, log_audit
 from app.luclient import translate_from_locale, query_cdclient
+from app.cdclient_queries import get_loot_objects
 import time
 
 mail_blueprint = Blueprint('mail', __name__)
@@ -68,9 +69,7 @@ def send():
     for character in recipients:
         form.recipient.choices.append((character.id, character.name))
 
-    items = query_cdclient(
-        'Select id, name, displayName from Objects where type = "Loot"'
-    )
+    items = get_loot_objects()
 
     for item in items:
         name = translate_from_locale(f'Objects_{item[0]}_name')

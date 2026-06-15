@@ -148,6 +148,7 @@ class ResolveBugReportForm(FlaskForm):
         widget=TextArea(),
         validators=[DataRequired()]
     )
+    issue_strike = BooleanField('Issue strike to reporter')
 
     submit = SubmitField('Submit')
 
@@ -209,8 +210,31 @@ class RejectPropertyForm(FlaskForm):
         widget=TextArea(),
         validators=[validators.DataRequired()]
     )
+    issue_strike = BooleanField('Issue strike to property owner')
 
     submit = SubmitField('Submit')
+
+
+class IssueStrikeForm(FlaskForm):
+    reason = StringField(
+        'Reason',
+        widget=TextArea(),
+        validators=[validators.DataRequired()],
+    )
+    submit = SubmitField('Issue Strike')
+
+
+class AnnouncementForm(FlaskForm):
+    title = StringField(
+        'Title',
+        validators=[validators.DataRequired(), validators.Length(max=120)],
+    )
+    message = StringField(
+        'Message',
+        widget=TextArea(),
+        validators=[validators.DataRequired(), validators.Length(max=500)],
+    )
+    submit = SubmitField('Send Announcement')
 
 
 class CharXMLUploadForm(FlaskForm):

@@ -55,6 +55,11 @@
   * Send Mail:
     * Send Mail to characters
     * Attach items to Mail
+  * Strikes:
+    * Configurable strike system with auto-mute and auto-ban thresholds
+    * Issue strikes from moderation actions or manually per account
+  * Announcements:
+    * Send in-game announcements via the DLU Chat Web API (GM 8+)
   * Economy Reports:
     * Reports are generated as a scheduled background task run every day at 2300 UTC
     * Accounts with GM Level 3 and above are ignored
@@ -104,6 +109,16 @@ Please Reference `app/settings_example.py` to see all the variables
     * APP_SECRET_KEY (Must be provided)
     * APP_DATABASE_URI (Must be provided)
   * Everything else is optional and has defaults
+
+### Strikes, announcements, and tests
+
+After upgrading, run `flask db upgrade` to apply new tables (`account_strikes`, `announcement_logs`).
+
+Strike thresholds are configured in `app/settings_example.py` (`STRIKES_BEFORE_MUTE`, `STRIKES_BEFORE_BAN`, etc.).
+
+In-game announcements use the [DLU Chat Web API](https://github.com/DarkflameUniverse/DarkflameServer/blob/main/docs/ChatWebAPI.yaml) — set `CHAT_API_ENABLED=True` and `CHAT_API_URL` (default `http://localhost:2005/api/v1`).
+
+Run tests with `pip install -r requirements-dev.txt && pytest`.
 
 ## Manual Linux Installation
 
@@ -332,3 +347,4 @@ Once all of the above is complete, you can run the site with the command
 Please use [Editor Config](https://editorconfig.org/) to maintain a consistent coding style between different editors and different contributors.
 
   * `python3 -m flask run` to run a local dev server
+  * `pip install -r requirements-dev.txt && pytest` to run tests

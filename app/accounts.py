@@ -20,7 +20,9 @@ from app.models import (
     Friends
 )
 from app import gm_level, log_audit
-from app.forms import EditGMLevelForm, EditEmailForm
+from app.forms import EditGMLevelForm, EditEmailForm, IssueStrikeForm
+from app.strikes import count_active_strikes, issue_strike
+from app.models import AccountStrike
 from sqlalchemy import or_
 
 accounts_blueprint = Blueprint('accounts', __name__)
@@ -38,7 +40,15 @@ def index():
 def view(id):
     account_data = Account.query.filter(Account.id == id).first()
     if account_data:
-        return render_template('accounts/view.html.j2', account_data=account_data)
+        strikes = AccountStrike.query.filter(
+            AccountStrike.account_id == id
+        ).order_by(AccountStrike.created_at.desc()).all()
+        return render_template(
+            'accounts/view.html.j2',
+            account_data=account_data,
+            strikes=strikes,
+            active_strike_count=count_active_strikes(id),
+        )
     else:
         return redirect(url_for('main.index'))
 
@@ -83,6 +93,36 @@ def edit_email(id):
 
     form.email.data = account_data.email
     return render_template('accounts/edit_email.html.j2', form=form, username=account_data.username)
+
+
+@accounts_blueprint.route('/strike/<id>', methods=['GET', 'POST'])
+@login_required
+@gm_level(3)
+def add_strike(id):
+    account = Account.query.filter(Account.id == id).first()
+    if not account:
+        return redirect(url_for('accounts.index'))
+
+    if account.gm_level >= current_user.gm_level:
+        flash("You cannot issue strikes to this account.", "danger")
+        return redirect(url_for('accounts.view', id=id))
+
+    form = IssueStrikeForm()
+    if form.validate_on_submit():
+        strike = issue_strike(
+            account_id=account.id,
+            issued_by_id=current_user.id,
+            source_type='manual',
+            reason=form.reason.data,
+        )
+        if strike and strike.action_taken:
+            flash(f"Strike issued. Auto-action applied: {strike.action_taken}", "warning")
+        else:
+            flash("Strike issued.", "success")
+        log_audit(f"Issued strike to ({account.id}){account.username}: {form.reason.data}")
+        return redirect(url_for('accounts.view', id=id))
+
+    return render_template('accounts/strike.html.j2', form=form, account=account)
 
 
 @accounts_blueprint.route('/lock/<id>', methods=['GET'])

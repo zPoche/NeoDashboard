@@ -71,3 +71,15 @@ RECAPTCHA_PRIVATE_KEY = ''
 # RECAPTCHA_API_SERVER = ''
 # RECAPTCHA_PARAMETERS = ''
 RECAPTCHA_DATA_ATTRS = {'theme': 'white', 'size': 'invisible'}
+
+# Strike / Ban system (#42)
+STRIKE_AUTO_ACTIONS_ENABLED = True
+STRIKES_BEFORE_MUTE = 3
+STRIKES_BEFORE_BAN = 5
+STRIKE_MUTE_DAYS = 7
+STRIKE_ROLLOFF_DAYS = 90
+
+# In-game announcements via DLU Chat Web API (#41)
+# Enable chatconfig.ini Web API on the game server first.
+CHAT_API_ENABLED = False
+CHAT_API_URL = 'http://localhost:2005/api/v1'

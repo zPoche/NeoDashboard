@@ -15,7 +15,9 @@ import time
 from app.models import Property, db, UGC, CharacterInfo, PropertyContent, Account, Mail
 from app import gm_level, log_audit
 from app.luclient import query_cdclient
+from app.cdclient_queries import get_zone_display_name
 from app.forms import RejectPropertyForm
+from app.strikes import account_id_for_character, issue_strike
 
 import zlib
 import app.pylddlib as ldd
@@ -113,6 +115,18 @@ def reject(id):
         )
 
         property_data.save()
+
+        if form.issue_strike.data:
+            owner_account_id = account_id_for_character(property_data.owner_id)
+            strike = issue_strike(
+                account_id=owner_account_id,
+                issued_by_id=current_user.id,
+                source_type='property',
+                source_id=property_data.id,
+                reason=f"Property rejected: {form.rejection_reason.data}",
+            )
+            if strike and strike.action_taken:
+                flash(f"Auto-action applied: {strike.action_taken}", "warning")
 
         # send rejection reason to their mailbox
         # cause the game doesn't present it otherwise
