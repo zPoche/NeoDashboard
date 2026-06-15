@@ -34,14 +34,18 @@ USER_REQUIRE_RETYPE_PASSWORD = True  # Prompt for `retype password`
 USER_ENABLE_USERNAME = True  # Register and Login with username
 
 # Email Related Settings
-USER_ENABLE_EMAIL = False  # Register with Email WILL - DISABLE OTHER THINGS TOO
+# Required for invitations, email verification, and password recovery.
+USER_ENABLE_EMAIL = False  # Must be True for email invitations
 USER_ENABLE_CONFIRM_EMAIL = True  # Force users to confirm their email
-USER_ENABLE_INVITE_USER = False  # Allow users to be invited
-USER_REQUIRE_INVITATION = False  # Only invited users may - WILL DISABLE REGISTRATION
+USER_ENABLE_INVITE_USER = False  # Show Invite link and allow sending invitations
+USER_REQUIRE_INVITATION = False  # Only invited users may register (disables open registration)
 USER_ENABLE_FORGOT_PASSWORD = True  # Allow users to reset their passwords
 
+# SMTP settings (see README "Email and Invitations" for provider examples)
 MAIL_SERVER = 'smtp.gmail.com'
 MAIL_PORT = 587
+# Port 587: MAIL_USE_TLS=True, MAIL_USE_SSL=False
+# Port 465: MAIL_USE_TLS=False, MAIL_USE_SSL=True
 MAIL_USE_SSL = False
 MAIL_USE_TLS = True
 MAIL_USERNAME = None

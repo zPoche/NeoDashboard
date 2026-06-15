@@ -38,7 +38,14 @@ def index():
 def view(id):
     account_data = Account.query.filter(Account.id == id).first()
     if account_data:
-        return render_template('accounts/view.html.j2', account_data=account_data)
+        invites = AccountInvitation.query.filter(
+            AccountInvitation.invited_by_user_id == id
+        ).order_by(AccountInvitation.id.desc()).all()
+        return render_template(
+            'accounts/view.html.j2',
+            account_data=account_data,
+            invites=invites,
+        )
     else:
         return redirect(url_for('main.index'))
 

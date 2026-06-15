@@ -186,6 +186,22 @@ def register_logging(app):
     app.logger.addHandler(file_handler)
 
 
+def valtobool(val, logger=None):
+    """Convert common truthy/falsey strings to bool."""
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, int):
+        val = str(val)
+    val = str(val).lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    if val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    if logger:
+        logger.warning("invalid truth value %r", val)
+    raise ValueError(f"invalid truth value {val!r}")
+
+
 def register_settings(app):
     """Register setting from setting and env
 
@@ -220,30 +236,30 @@ def register_settings(app):
         'APP_DATABASE_URI',
         app.config['APP_DATABASE_URI']
     )
-    app.config['USER_ENABLE_REGISTER'] = os.getenv(
+    app.config['USER_ENABLE_REGISTER'] = valtobool(os.getenv(
         'USER_ENABLE_REGISTER',
         app.config['USER_ENABLE_REGISTER']
-    )
-    app.config['USER_ENABLE_EMAIL'] = os.getenv(
+    ), app.logger)
+    app.config['USER_ENABLE_EMAIL'] = valtobool(os.getenv(
         'USER_ENABLE_EMAIL',
         app.config['USER_ENABLE_EMAIL']
-    )
-    app.config['USER_ENABLE_CONFIRM_EMAIL'] = os.getenv(
+    ), app.logger)
+    app.config['USER_ENABLE_CONFIRM_EMAIL'] = valtobool(os.getenv(
         'USER_ENABLE_CONFIRM_EMAIL',
         app.config['USER_ENABLE_CONFIRM_EMAIL']
-    )
-    app.config['REQUIRE_PLAY_KEY'] = os.getenv(
+    ), app.logger)
+    app.config['REQUIRE_PLAY_KEY'] = valtobool(os.getenv(
         'REQUIRE_PLAY_KEY',
         app.config['REQUIRE_PLAY_KEY']
-    )
-    app.config['USER_ENABLE_INVITE_USER'] = os.getenv(
+    ), app.logger)
+    app.config['USER_ENABLE_INVITE_USER'] = valtobool(os.getenv(
         'USER_ENABLE_INVITE_USER',
         app.config['USER_ENABLE_INVITE_USER']
-    )
-    app.config['USER_REQUIRE_INVITATION'] = os.getenv(
+    ), app.logger)
+    app.config['USER_REQUIRE_INVITATION'] = valtobool(os.getenv(
         'USER_REQUIRE_INVITATION',
         app.config['USER_REQUIRE_INVITATION']
-    )
+    ), app.logger)
     app.config['MAIL_SERVER'] = os.getenv(
         'MAIL_SERVER',
         app.config['MAIL_SERVER']
@@ -254,14 +270,14 @@ def register_settings(app):
         app.config['MAIL_PORT']
         )
     )
-    app.config['MAIL_USE_SSL'] = os.getenv(
+    app.config['MAIL_USE_SSL'] = valtobool(os.getenv(
         'MAIL_USE_SSL',
         app.config['MAIL_USE_SSL']
-    )
-    app.config['MAIL_USE_TLS'] = os.getenv(
+    ), app.logger)
+    app.config['MAIL_USE_TLS'] = valtobool(os.getenv(
         'MAIL_USE_TLS',
         app.config['MAIL_USE_TLS']
-    )
+    ), app.logger)
     app.config['MAIL_USERNAME'] = os.getenv(
         'MAIL_USERNAME',
         app.config['MAIL_USERNAME']
@@ -279,12 +295,18 @@ def register_settings(app):
         app.config['USER_EMAIL_SENDER_EMAIL']
     )
 
+    if app.config['MAIL_USE_SSL'] and app.config['MAIL_USE_TLS']:
+        app.logger.warning(
+            "MAIL_USE_SSL and MAIL_USE_TLS are both enabled. "
+            "Use TLS on port 587 or SSL on port 465, not both."
+        )
+
     if "ENABLE_CHAR_XML_UPLOAD" not in app.config:
         app.config['ENABLE_CHAR_XML_UPLOAD'] = False
-    app.config['ENABLE_CHAR_XML_UPLOAD'] = os.getenv(
+    app.config['ENABLE_CHAR_XML_UPLOAD'] = valtobool(os.getenv(
         'ENABLE_CHAR_XML_UPLOAD',
         app.config['ENABLE_CHAR_XML_UPLOAD']
-    )
+    ), app.logger)
 
     if "CLIENT_LOCATION" not in app.config:
         app.config['CLIENT_LOCATION'] = 'app/luclient/'
@@ -310,10 +332,10 @@ def register_settings(app):
     # Recaptcha settings
     if "RECAPTCHA_ENABLE" not in app.config:
         app.config['RECAPTCHA_ENABLE'] = False
-    app.config['RECAPTCHA_ENABLE'] = os.getenv(
+    app.config['RECAPTCHA_ENABLE'] = valtobool(os.getenv(
         'RECAPTCHA_ENABLE',
         app.config['RECAPTCHA_ENABLE']
-    )
+    ), app.logger)
     if "RECAPTCHA_PUBLIC_KEY" not in app.config:
         app.config['RECAPTCHA_PUBLIC_KEY'] = ''
     app.config['RECAPTCHA_PUBLIC_KEY'] = os.getenv(

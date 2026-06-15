@@ -14,6 +14,27 @@
 
 {% block content %}
   {% include 'partials/_account.html.j2' %}
+  {% if invites %}
+    <br/>
+    <h3 class="text-center">Sent Invitations</h3>
+    <hr class="bg-primary"/>
+    <table class="table table-dark table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Token</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invite in invites %}
+          <tr>
+            <td>{{ invite.email }}</td>
+            <td><code>{{ invite.token }}</code></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 {% endblock content %}
 
 

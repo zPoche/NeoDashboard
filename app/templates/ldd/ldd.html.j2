@@ -279,14 +279,25 @@
 
     AddScene(file){
       let lxfmlfile = new DBURLFile(file,file)
-      this.xmldata = lxfmlfile.read()
+      this.parseXmlData(lxfmlfile.read())
+    }
 
-      if (this.xmldata === ""){
-        alert(this.xmldata)
+    async addSceneAsync(file) {
+      const response = await fetch(file);
+      if (!response.ok) {
+        throw new Error(`Failed to load UGC model: ${response.status} ${response.statusText}`);
+      }
+      this.parseXmlData(await response.text());
+    }
+
+    parseXmlData(xmldata) {
+      if (xmldata === ""){
+        alert("Failed to load UGC model data")
+        return
       }
 
       let parser = new DOMParser();
-      let xml = parser.parseFromString(this.xmldata, "text/xml");
+      let xml = parser.parseFromString(xmldata, "text/xml");
 
       let nodes = xml.firstChild.childNodes;
       for (let i = 0; i < nodes.length ;i++) {
@@ -1041,16 +1052,19 @@
     {% endfor %}
   ]
   if (lxfml_file_list.length > 0) {
-  let ldddburl = FindDBURL()
+    let ldddburl = FindDBURL()
 
     if (ldddburl) {
       let converter = new Converter()
       converter.LoadDBURL(ldddburl)
-      for (let i = 0; i < lxfml_file_list.length; i++) {
-        converter.LoadScene(lxfml_file_list[i])
-      }
-      converter.Export('test.webgl')
-
+      Promise.all(lxfml_file_list.map((url) => converter.scene.addSceneAsync(url)))
+        .then(() => {
+          converter.Export('test.webgl')
+        })
+        .catch((error) => {
+          console.error(error)
+          alert("Failed to load one or more UGC models.")
+        })
     }
     else {
       alert("LDD database not available. Please look for LEGO-Digital-Designer database.")
