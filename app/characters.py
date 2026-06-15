@@ -6,6 +6,7 @@ from app.models import CharacterInfo, CharacterXML, Account, db
 from app.forms import RescueForm, CharXMLUploadForm
 from app import gm_level, log_audit
 from app.luclient import translate_from_locale
+from sqlalchemy.exc import IntegrityError
 import xmltodict
 import xml.etree.ElementTree as ET
 import json
@@ -13,6 +14,33 @@ from xml.dom import minidom
 
 
 character_blueprint = Blueprint('characters', __name__)
+
+
+def apply_character_name_approval(character):
+    """Apply a pending character name. Returns True on success."""
+    if not character.pending_name:
+        return False
+
+    old_name = character.name
+    new_name = character.pending_name
+    duplicate = CharacterInfo.query.filter(
+        CharacterInfo.name == new_name,
+        CharacterInfo.id != character.id
+    ).first()
+    if duplicate:
+        return False
+
+    character.name = new_name
+    character.pending_name = ""
+    character.needs_rename = False
+    try:
+        character.save()
+    except IntegrityError:
+        db.session.rollback()
+        return False
+
+    log_audit(f"Approved ({character.id}) {new_name} from {old_name}")
+    return True
 
 @character_blueprint.route('/', methods=['GET'])
 @login_required
@@ -29,20 +57,30 @@ def approve_name(id, action):
 
     if action == "approve":
         if character.pending_name:
-            character.name = character.pending_name
-            character.pending_name = ""
-            log_audit(f"Approved ({character.id}){character.pending_name} from {character.name}")
-            flash(
-                f"Approved ({character.id}){character.pending_name} from {character.name}",
-                "success"
-            )
+            new_name = character.pending_name
+            if apply_character_name_approval(character):
+                flash(
+                    f"Approved ({character.id}) {new_name}",
+                    "success"
+                )
+            else:
+                flash(
+                    f"Cannot approve name '{new_name}': already used by another character",
+                    "danger"
+                )
+                log_audit(
+                    f"Failed to approve ({character.id}) {new_name}: duplicate name"
+                )
+                return redirect(request.referrer if request.referrer else url_for("main.index"))
         else:
             log_audit("Cannot make character name empty")
             flash(
                 "Cannot make character name empty",
                 "danger"
             )
-        character.needs_rename = False
+            character.needs_rename = False
+            character.save()
+            return redirect(request.referrer if request.referrer else url_for("main.index"))
 
     elif action == "rename":
         character.needs_rename = True
@@ -382,9 +420,11 @@ def get(status):
         """
 
         if character["4"]:
-            character["4"] = '''<h1 class="far fa-check-square text-danger"></h1>'''
+            character["4"] = '''<h1 class="far fa-times-circle text-danger"></h1>'''
+        elif character["3"]:
+            character["4"] = '''<h1 class="far fa-check-square text-success"></h1>'''
         else:
-            character["4"] = '''<h1 class="far fa-times-circle text-success"></h1>'''
+            character["4"] = '''<h1 class="far fa-times-circle text-muted"></h1>'''
 
         character["5"] = time.ctime(character["5"])
 

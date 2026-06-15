@@ -60,6 +60,8 @@ USER_AFTER_LOGIN_ENDPOINT = "main.index"
 USER_AFTER_LOGOUT_ENDPOINT = "main.index"
 
 # Option will be removed once this feature is full implemeted
+# Set to True to show the Upload XML button for GM 8+ users on character pages.
+# Can also be set via ENABLE_CHAR_XML_UPLOAD=true environment variable.
 ENABLE_CHAR_XML_UPLOAD = False
 
 # Recaptcha settings
@@ -71,3 +73,6 @@ RECAPTCHA_PRIVATE_KEY = ''
 # RECAPTCHA_API_SERVER = ''
 # RECAPTCHA_PARAMETERS = ''
 RECAPTCHA_DATA_ATTRS = {'theme': 'white', 'size': 'invisible'}
+
+# If you want to use under a virtual path of a reverse proxy.
+#SCRIPT_NAME = "/games/lego-universe/nexus-dashboard"

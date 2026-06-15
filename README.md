@@ -104,6 +104,8 @@ Please Reference `app/settings_example.py` to see all the variables
     * APP_SECRET_KEY (Must be provided)
     * APP_DATABASE_URI (Must be provided)
   * Everything else is optional and has defaults
+  * Character XML import:
+    * `ENABLE_CHAR_XML_UPLOAD` (default: `False`) — set to `True` to show the Upload XML button for GM 8+ users when migrating player data between servers
 
 ## Manual Linux Installation
 
