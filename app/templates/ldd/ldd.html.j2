@@ -277,20 +277,23 @@
       this.xmldata = ''
     }
 
-    AddScene(file){
+    // placement: optional THREE.Matrix4 that places this model on the property.
+    // DLU stores player-built models around their own origin and keeps position
+    // and rotation on properties_contents.
+    AddScene(file, placement = null){
       let lxfmlfile = new DBURLFile(file,file)
-      this.parseXmlData(lxfmlfile.read())
+      this.parseXmlData(lxfmlfile.read(), placement)
     }
 
-    async addSceneAsync(file) {
+    async addSceneAsync(file, placement = null) {
       const response = await fetch(file);
       if (!response.ok) {
         throw new Error(`Failed to load UGC model: ${response.status} ${response.statusText}`);
       }
-      this.parseXmlData(await response.text());
+      this.parseXmlData(await response.text(), placement);
     }
 
-    parseXmlData(xmldata) {
+    parseXmlData(xmldata, placement = null) {
       if (xmldata === ""){
         alert("Failed to load UGC model data")
         return
@@ -316,7 +319,9 @@
           for (let j = 0; j < childnodes.length ;j++) {
             let childnode = childnodes[j]
             if (childnode.nodeName == 'Brick'){
-              this.Bricks.push(new Brick(childnode))
+              let brick = new Brick(childnode)
+              brick.placement = placement
+              this.Bricks.push(brick)
             }
           }
         }
@@ -542,9 +547,9 @@
       }
     }
 
-    LoadScene(filename){
+    LoadScene(filename, placement = null){
       if(this.database.initok){
-        this.scene.AddScene(filename)
+        this.scene.AddScene(filename, placement)
       }
     }
 
@@ -617,6 +622,12 @@
                 n12, n22, n32, n42,
                 n13, n23, n33, n43,
                 n14, n24 ,n34, n44);
+          }
+
+          // Move the brick from model space onto the property.
+          // Flex parts keep an identity brick matrix, so this also places them.
+          if (bri.placement){
+            m.premultiply(bri.placement)
           }
 
           let decoCount = 0
@@ -1044,10 +1055,14 @@
 
 
   //Start
+  // Player-built models, with the position and rotation stored in properties_contents.
   let lxfml_file_list = [
     {% for model in content %}
       {% if model.lot == 14 %}
-        "{{url_for('properties.get_model', id=model.id, file_format='lxfml', lod=lod)}}"{{ ", " if not loop.last else "" }}
+        {
+          "url": "{{url_for('properties.get_model', id=model.id, file_format='lxfml', lod=lod)}}",
+          "pos": {{ model.pos[0]|tojson }}
+        }{{ ", " if not loop.last else "" }}
       {% endif %}
     {% endfor %}
   ]
@@ -1057,7 +1072,15 @@
     if (ldddburl) {
       let converter = new Converter()
       converter.LoadDBURL(ldddburl)
-      Promise.all(lxfml_file_list.map((url) => converter.scene.addSceneAsync(url)))
+      Promise.all(lxfml_file_list.map((entry) => {
+        let pos = entry.pos
+        let placement = new THREE.Matrix4().compose(
+          new THREE.Vector3(pos.x, pos.y, pos.z),
+          new THREE.Quaternion(pos.rx, pos.ry, pos.rz, pos.rw),
+          new THREE.Vector3(1, 1, 1)
+        )
+        return converter.scene.addSceneAsync(entry.url, placement)
+      }))
         .then(() => {
           converter.Export('test.webgl')
         })
