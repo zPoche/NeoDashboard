@@ -305,7 +305,7 @@ While a lot of the setup on Windows is the same a lot of it can be completed wit
 ### Setting Up The Environment
 You need to install the following prerequisites:
 
-  * [Python 3.8](https://www.python.org/downloads/release/python-380/)
+  * [Python 3.12](https://www.python.org/downloads/)
   * [Git](https://git-scm.com/downloads)
   * [ImageMagick](https://docs.wand-py.org/en/latest/guide/install.html#install-imagemagick-on-windows)
   * [7-Zip](https://www.7-zip.org/download.html)
